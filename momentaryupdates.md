@@ -11,14 +11,14 @@
 2. Find why random apps open at login (login items, LaunchAgents, reopen-windows) and list them. — **Status:** started
 3. **Swift Matrix (Mantra)**, the first row of the star: a simple task manager of every app running now and everything
    that starts with the Mac; from it, close any of them or switch its auto-start; mark what comes from the star.
-   Silent: it opens only when chosen. — **Status:** started (this repository)
+   Silent: it opens only when chosen. — **Status:** built 14.10.2026, v2 (439b97e), first row of the star
 
 ## 14.10.2026 — sorting by columns
 
 > in the Swift matrix, you need to add sorting of all displayed apps with criteria name the running app to start these options. Sort them at the top columns. Build columns for sorting like in any program
 
 4. A real table with clickable column headers (ascending / descending, like Finder): Name, Kind, Running, Auto-start,
-   Path; the sort choice remembered; QUIT and AUTO-START stay in every row. — **Status:** started
+   Path; the sort choice remembered; QUIT and AUTO-START stay in every row. — **Status:** done 14.10.2026, v2
 5. (14.10.2026, Marko: "why I need to put my password to Swift tool many times") The login items were read with
    `sfltool dumpbtm`, which asks for the admin password at every refresh: removed; System Events instead (Automation
    asked once, no password). — **Status:** done
