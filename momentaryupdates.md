@@ -1,0 +1,14 @@
+# Momentary updates: Marko's requests, word for word, saved before any code
+
+## 14.10.2026 — startup housekeeping lost in the move from Lua to Swift; the Swift Matrix
+
+> Also work on my transition for star menu from Swift. From Lua to Swift, actually. When the computer is starting my Specify is not killed and other startup. Functions from Lua which were doing. Um Housekeeping when the computer starts are not working. Seems like there is no keeping of the same Of the same. Behavior. And you need to develop one more Swift in the star menu, which is the which will be the first one. We call it a Swift matrix. In the Swift matrix, I can just see the list, it's like a task manager of all Applications which are auto-starting and open right now. And I can from this one point I can close them or make them start with the computer. So it's like kind of dashboard which is very simple. It can display everything that's running from my star, and I can close it remotely from here or put it to auto-run. Sometimes or what's happening now the the there are some random apps are opening every time I'm starting Starting my computer and I need to manually click on each window and close it, which is very annoying. It should not do something like this. It should listen and behave and be silent.
+
+("Specify" = Speechify.)
+
+1. Startup housekeeping: everything the Lua star did at login (Speechify killed, splash windows closed, the other
+   jobs) done again, now from Swift, silently. — **Status:** started
+2. Find why random apps open at login (login items, LaunchAgents, reopen-windows) and list them. — **Status:** started
+3. **Swift Matrix (Mantra)**, the first row of the star: a simple task manager of every app running now and everything
+   that starts with the Mac; from it, close any of them or switch its auto-start; mark what comes from the star.
+   Silent: it opens only when chosen. — **Status:** started (this repository)
