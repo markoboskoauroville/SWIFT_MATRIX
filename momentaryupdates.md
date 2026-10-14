@@ -22,3 +22,10 @@
 5. (14.10.2026, Marko: "why I need to put my password to Swift tool many times") The login items were read with
    `sfltool dumpbtm`, which asks for the admin password at every refresh: removed; System Events instead (Automation
    asked once, no password). — **Status:** done
+
+## 14.10.2026 — a search filter
+
+> please add a filter search filter to the Swift matrix
+
+6. A search field above the table: filters the rows live as he types (name, kind and path, any case), a clear (x)
+   button, together with the column sorting. — **Status:** started (v3)
