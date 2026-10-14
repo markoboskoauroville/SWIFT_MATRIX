@@ -28,4 +28,4 @@
 > please add a filter search filter to the Swift matrix
 
 6. A search field above the table: filters the rows live as he types (name, kind and path, any case), a clear (x)
-   button, together with the column sorting. — **Status:** started (v3)
+   button, together with the column sorting. — **Status:** done 14.10.2026, v3 ("agent" → 22 rows, clear → 65)

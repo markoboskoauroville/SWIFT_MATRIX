@@ -17,7 +17,7 @@
 import SwiftUI
 import AppKit
 
-let VERSION = 2
+let VERSION = 3
 let REPO = "https://github.com/markoboskoauroville/SWIFT_MATRIX"
 let HOME = NSHomeDirectory()
 let CONF = HOME + "/.config"
@@ -399,9 +399,15 @@ struct MatrixView: View {
     @AppStorage("sortKey") var sortKey = "kind"
     @AppStorage("sortAscending") var sortAscending = true
     @State var order: [KeyPathComparator<Entry>] = []
+    // v3 (14.10.2026, Marko: "please add a filter search filter to the Swift matrix"): name, kind and path, any case
+    @State var filter = ""
 
     var rows: [Entry] {
-        let all = m.star + m.boot + m.open
+        let q = filter.trimmingCharacters(in: .whitespaces).lowercased()
+        let all = (m.star + m.boot + m.open).filter { e in
+            q.isEmpty || e.name.lowercased().contains(q) || e.kindText.lowercased().contains(q) || e.detail.lowercased().contains(q)
+                || (e.path ?? "").lowercased().contains(q)
+        }
         guard let first = order.first else { return all }
         // the chosen column first, the name second, so equal kinds or states stay in a stable, readable order
         return all.sorted { a, b in
@@ -422,6 +428,16 @@ struct MatrixView: View {
                 Spacer()
                 Text(m.said).font(.system(size: 11, design: .monospaced)).foregroundColor(AMBER).lineLimit(1)
             }.padding(14).background(SURFACE)
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass").foregroundColor(GREY)
+                TextField("Filter: name, kind or path", text: $filter)
+                    .textFieldStyle(.plain).font(.system(size: 13)).foregroundColor(SAND)
+                Button(action: { filter = "" }) { Image(systemName: "xmark.circle.fill").foregroundColor(filter.isEmpty ? SLATE : GREY) }
+                    .buttonStyle(.plain).disabled(filter.isEmpty).help("Clear the filter")
+            }
+            .padding(.horizontal, 10).padding(.vertical, 7)
+            .background(RoundedRectangle(cornerRadius: 7).fill(SLATE.opacity(0.6)))
+            .padding(.horizontal, 14).padding(.bottom, 10).background(SURFACE)
             Table(rows, sortOrder: $order) {
                 TableColumn("Name", value: \Entry.nameKey) { e in
                     HStack(spacing: 8) {

@@ -10,6 +10,8 @@ closing its window quits it.
 
 ## The table
 
+A filter field above the table (v3) narrows the rows as he types: name, kind or path, any case; the (x) clears it.
+
 One table; every column header sorts, a second click reverses, the choice is remembered (Marko, 14.10.2026: *"Build
 columns for sorting like in any program"*). Columns: Name (green dot = running), Kind, Running, QUIT, AUTO-START, Path.
 
