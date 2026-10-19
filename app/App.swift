@@ -17,10 +17,12 @@
 // v4 (19.10.2026, Marko: "In the top of every user interface, there will now be an on/off switch ... If I say on, I close
 // it's on"): the first row is SWIFT MATRIX  ON  OFF. OFF quits it; closing the window leaves it ON, and the star (or the
 // Dock) brings the window back.
+// v5 (19.10.2026, Marko: "please unify the position of the close button on every application. It's far upper right
+// corner"): an ✕ at the far right of that row closes the window only; Swift Matrix stays ON.
 import SwiftUI
 import AppKit
 
-let VERSION = 4
+let VERSION = 5
 let REPO = "https://github.com/markoboskoauroville/SWIFT_MATRIX"
 let HOME = NSHomeDirectory()
 let CONF = HOME + "/.config"
@@ -409,6 +411,16 @@ struct OnOff: View {
     }
 }
 
+// v5 (19.10.2026): the ✕ at the far upper right closes this window only; the app stays ON
+struct CloseX: View {
+    var body: some View {
+        Button(action: { (NSApp.keyWindow ?? NSApp.windows.first { $0.isVisible })?.performClose(nil) }) {
+            Image(systemName: "xmark").font(.system(size: 15, weight: .medium)).foregroundColor(GREY)
+                .frame(width: 30, height: 30).contentShape(Rectangle())
+        }.buttonStyle(.plain).help("Close the window (Swift Matrix stays ON)")
+    }
+}
+
 let SORTS: [String: KeyPathComparator<Entry>] = [
     "name": KeyPathComparator(\Entry.nameKey), "kind": KeyPathComparator(\Entry.kindText),
     "running": KeyPathComparator(\Entry.runningText), "auto": KeyPathComparator(\Entry.autoText),
@@ -449,7 +461,8 @@ struct MatrixView: View {
                     .font(.system(size: 11, design: .monospaced)).foregroundColor(GREY)
                 Spacer()
                 Text(m.said).font(.system(size: 11, design: .monospaced)).foregroundColor(AMBER).lineLimit(1)
-            }.padding(14).background(SURFACE)
+                CloseX()
+            }.padding(14).padding(.trailing, -6).background(SURFACE)
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass").foregroundColor(GREY)
                 TextField("Filter: name, kind or path", text: $filter)

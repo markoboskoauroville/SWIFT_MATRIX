@@ -11,6 +11,8 @@ start with the computer ... It should listen and behave and be silent."*
 
 The first row of the window is **SWIFT MATRIX  ON  OFF** (MANTRA_MANIFEST swift-apps.md). ON is lit while it runs; OFF
 quits it. Closing the window leaves it ON; a click on its row in the star (or the Dock) brings the window back.
+The ✕ at the far right of that row (v5, 19.10.2026: *"unify the position of the close button on every application.
+It's far upper right corner"*) closes the window only.
 
 ## The table
 

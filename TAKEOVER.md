@@ -1,6 +1,6 @@
 # TAKEOVER: Swift Matrix (Mantra)
 
-**State, 19.10.2026: v4 (ON / OFF at the top; closing the window no longer quits) built and installed. Marko to try OFF.**
+**State, 19.10.2026: v5 (ON / OFF at the top, the ✕ at the far upper right; closing the window no longer quits) built and installed. Marko to try OFF and ✕.**
 
 (14.10.2026: v3, the filter, the first row of Star (Mantra) v4.)
 

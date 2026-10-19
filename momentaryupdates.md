@@ -50,4 +50,6 @@
 
 3. An ✕ at the window's far upper-right corner, on the ON / OFF row (ON / OFF at the left, ✕ at the right), grey; it
    closes the window only, the app stays ON. Every other dialog the app opens gets the same ✕. The title bar and its
-   traffic lights stay as they are. — **Status:** started
+   traffic lights stay as they are. — **Status:** built 19.10.2026, v5: ✕ (xmark, grey, 30×30) at the far right of
+   the SWIFT MATRIX ON OFF row, performClose on the window. Checked by screenshot (window capture). Swift Matrix has no
+   other dialog. Marko to try ✕ and OFF.
