@@ -13,11 +13,14 @@
 //                        /Library). A login item is switched through System Events, a LaunchAgent with launchctl
 //                        enable/disable (per user, no password); an app's own helper only in System Settings.
 //   RUNNING NOW          every other app that is open; AUTO-START ON makes it a login item (opened hidden).
-// Silent: it never starts by itself; the star's first row opens it, and closing the window quits it.
+// Silent: it never starts by itself; the star's first row opens it.
+// v4 (19.10.2026, Marko: "In the top of every user interface, there will now be an on/off switch ... If I say on, I close
+// it's on"): the first row is SWIFT MATRIX  ON  OFF. OFF quits it; closing the window leaves it ON, and the star (or the
+// Dock) brings the window back.
 import SwiftUI
 import AppKit
 
-let VERSION = 3
+let VERSION = 4
 let REPO = "https://github.com/markoboskoauroville/SWIFT_MATRIX"
 let HOME = NSHomeDirectory()
 let CONF = HOME + "/.config"
@@ -389,6 +392,23 @@ struct Word: View {
     }
 }
 
+// ON / OFF in the CAMERA words: the lit one green, the other grey (19.10.2026)
+struct OnOff: View {
+    let on: Bool; let off: () -> Void
+    var body: some View {
+        HStack(spacing: 4) {
+            Button(action: {}) { word("ON", on) }.buttonStyle(.plain).help("Swift Matrix runs")
+            Button(action: off) { word("OFF", !on) }.buttonStyle(.plain).help("Quit Swift Matrix")
+        }.padding(.leading, 8)
+    }
+    func word(_ t: String, _ lit: Bool) -> some View {
+        Text(t).font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundColor(lit ? GREEN : GREY)
+            .frame(minWidth: 44).padding(.vertical, 3)
+            .background(RoundedRectangle(cornerRadius: 5).fill(lit ? SLATE : SLATE.opacity(0.35)))
+            .contentShape(Rectangle())
+    }
+}
+
 let SORTS: [String: KeyPathComparator<Entry>] = [
     "name": KeyPathComparator(\Entry.nameKey), "kind": KeyPathComparator(\Entry.kindText),
     "running": KeyPathComparator(\Entry.runningText), "auto": KeyPathComparator(\Entry.autoText),
@@ -422,7 +442,9 @@ struct MatrixView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
+                // v4 (19.10.2026): ON / OFF, the first row. It runs, so ON is lit; OFF stops the timers by quitting.
                 Text("SWIFT MATRIX").font(.system(size: 15, weight: .bold, design: .monospaced)).foregroundColor(SAND)
+                OnOff(on: true) { NSApp.terminate(nil) }
                 Text("\(rows.filter { $0.running }.count) running · \(rows.filter { $0.auto == true }.count) start with the Mac")
                     .font(.system(size: 11, design: .monospaced)).foregroundColor(GREY)
                 Spacer()
@@ -486,9 +508,17 @@ struct MatrixView: View {
     }
 }
 
-// a dashboard, not an engine: closing the window quits it
+// v4 (19.10.2026): closing the window leaves it ON; only OFF quits. The reopen (the star's row, the Dock) brings the
+// window back: a window still there comes to the front, none left and SwiftUI's WindowGroup opens a new one.
 final class Delegate: NSObject, NSApplicationDelegate {
-    func applicationShouldTerminateAfterLastWindowClosed(_ s: NSApplication) -> Bool { true }
+    func applicationShouldTerminateAfterLastWindowClosed(_ s: NSApplication) -> Bool { false }
+    func applicationShouldHandleReopen(_ s: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        let ws = s.windows.filter { $0.isMiniaturized || $0.isVisible }
+        if ws.isEmpty { return true }
+        for w in ws { w.deminiaturize(nil); w.makeKeyAndOrderFront(nil) }
+        s.activate(ignoringOtherApps: true)
+        return false
+    }
 }
 
 @main struct SwiftMatrix: App {

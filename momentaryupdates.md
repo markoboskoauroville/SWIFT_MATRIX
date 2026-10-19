@@ -37,6 +37,9 @@
 (MANTRA_MANIFEST modules/swift-apps.md, "ON / OFF at the top of every window"; the star, STAR_SWIFT v5, now only opens apps.)
 
 1. The first row of the main window is ON / OFF in the window's own style, named after what it switches. ON is lit while
-   the app runs; OFF stops the engine cleanly and quits the app. — **Status:** started
+   the app runs; OFF stops the engine cleanly and quits the app. — **Status:** built 19.10.2026, v4: the header row is
+   SWIFT MATRIX  ON  OFF (OFF = NSApp.terminate; a dashboard, no engine to keep). Checked by screenshot: the row at the
+   top, v4 at the foot. Marko to try OFF.
 2. Closing the window leaves the app ON; the reopen (a click in the star or the Dock) shows the window again; `--login`
-   still starts without a window. — **Status:** started
+   still starts without a window. — **Status:** built 19.10.2026, v4: applicationShouldTerminateAfterLastWindowClosed
+   false; the reopen brings a window to the front or lets the WindowGroup open a new one (it has no --login).

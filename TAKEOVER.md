@@ -1,6 +1,8 @@
 # TAKEOVER: Swift Matrix (Mantra)
 
-**State, 14.10.2026: v3 (the filter) built, installed, the first row of Star (Mantra) v4.**
+**State, 19.10.2026: v4 (ON / OFF at the top; closing the window no longer quits) built and installed. Marko to try OFF.**
+
+(14.10.2026: v3, the filter, the first row of Star (Mantra) v4.)
 
 Verified 14.10.2026 on the Mac: the window lists 60-odd rows (star rows, 6 login items, 13 user and 11 system
 LaunchAgents, the open apps); a test LaunchAgent (`community.auroville.matrixtest`, /bin/sleep) switched AUTO-START OFF

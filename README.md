@@ -5,8 +5,12 @@ AUTO-START.** Marko, 14.10.2026: *"In the Swift matrix, I can just see the list,
 Applications which are auto-starting and open right now. And I can from this one point I can close them or make them
 start with the computer ... It should listen and behave and be silent."*
 
-`/Applications/Swift Matrix (Mantra).app`, the first row of the star (Star (Mantra) v4). It never starts by itself;
-closing its window quits it.
+`/Applications/Swift Matrix (Mantra).app`, the first row of the star (Star (Mantra) v4). It never starts by itself.
+
+## ON / OFF (v4, 19.10.2026)
+
+The first row of the window is **SWIFT MATRIX  ON  OFF** (MANTRA_MANIFEST swift-apps.md). ON is lit while it runs; OFF
+quits it. Closing the window leaves it ON; a click on its row in the star (or the Dock) brings the window back.
 
 ## The table
 
