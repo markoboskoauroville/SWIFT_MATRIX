@@ -21,12 +21,12 @@
 // corner"): an ✕ at the far right of that row closes the window only; Swift Matrix stays ON.
 // v6 (20.10.2026, Marko: "It's showing other apps. I wanted to just show the apps of a star menu, nothing else ... I don't
 // want hammer spoon to start automatically ... it needs to be retired"): only the star's Swift apps (kind "app" in
-// star-rows.json). No login items, no LaunchAgents, no other open apps, and no Hammerspoon: its Lua rows are not shown
+// star-rows.json). v7 (20.10.2026): the light at the start of each row launches the app. No login items, no LaunchAgents, no other open apps, and no Hammerspoon: its Lua rows are not shown
 // and Swift Matrix never asks `hs` anything. The three sections above are history.
 import SwiftUI
 import AppKit
 
-let VERSION = 6
+let VERSION = 7
 let REPO = "https://github.com/markoboskoauroville/SWIFT_MATRIX"
 let HOME = NSHomeDirectory()
 let CONF = HOME + "/.config"
@@ -122,6 +122,20 @@ final class Matrix: ObservableObject {
             }
         }
         star = s
+    }
+
+    // v7 (20.10.2026, Marko: "make Swift Matrix also a launcher ... this running light at the beginning is a launching
+    // icon"): the light opens the app; one that runs comes to the front, its window back (the reopen every app handles)
+    func launch(_ e: Entry) {
+        guard let p = e.path else { return }
+        let c = NSWorkspace.OpenConfiguration(); c.activates = true
+        said = e.running ? "\(e.name): to the front" : "\(e.name): opening…"
+        NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: p), configuration: c) { _, err in
+            DispatchQueue.main.async {
+                if let err = err { self.said = "\(e.name): did not open: \(err.localizedDescription)" }
+                self.refresh()
+            }
+        }
     }
 
     func stubborn(_ e: Entry) -> Bool { e.running && (quitting[e.id].map { Date().timeIntervalSince($0) > 5 } ?? false) }
@@ -256,7 +270,13 @@ struct MatrixView: View {
             Table(rows, sortOrder: $order) {
                 TableColumn("Name", value: \Entry.nameKey) { e in
                     HStack(spacing: 8) {
-                        Circle().fill(e.running ? GREEN : SLATE).frame(width: 8, height: 8)
+                        Button(action: { m.launch(e) }) {
+                            ZStack {
+                                Circle().fill(e.running ? GREEN : SLATE).frame(width: 18, height: 18)
+                                Image(systemName: "play.fill").font(.system(size: 8, weight: .bold))
+                                    .foregroundColor(e.running ? INK : SAND).offset(x: 1)
+                            }.frame(width: 24, height: 24).contentShape(Rectangle())
+                        }.buttonStyle(.plain).help(e.running ? "Running: bring its window to the front" : "Open it")
                         if let i = icon(e.path) { Image(nsImage: i).resizable().frame(width: 16, height: 16) }
                         else { RoundedRectangle(cornerRadius: 3).fill(SLATE).frame(width: 16, height: 16) }
                         Text(e.name).font(.system(size: 12, weight: .semibold)).foregroundColor(e.running ? SAND : SAND.opacity(0.55)).lineLimit(1)

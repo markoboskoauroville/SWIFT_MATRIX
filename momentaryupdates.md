@@ -70,4 +70,5 @@
 > make Swift Matrix also a launcher for the apps so this running light at the beginning is a launching icon
 
 3. The dot at the start of each row is a button: an app that is off is opened (its window in front, as the star
-   opens it); an app that runs is brought to the front with its window. Green = running, as before. — **Status:** in progress
+   opens it); an app that runs is brought to the front with its window. Green = running, as before. — **Status:** built 20.10.2026, v7 (a ▶ inside the light, 18 pt);
+   restarted hidden (old pid 2442, new 7399). Not screenshotted: no window opened on his screen. Marko to click one.

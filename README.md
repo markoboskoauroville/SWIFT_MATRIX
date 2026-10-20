@@ -23,7 +23,8 @@ One row per Swift app of the star (kind "app" in `~/.config/star-rows.json`), no
 LaunchAgents, no other open apps, no Hammerspoon rows. Swift Matrix never calls `hs`.
 
 A filter field above the table narrows the rows as he types: name or path, any case; the (x) clears it. Every column
-header sorts, a second click reverses, the choice is remembered. Columns: Name (green dot = running), Kind, Running,
+header sorts, a second click reverses, the choice is remembered. Columns: Name (the light at its start: green = running; a click opens the app, or brings a running one's window
+to the front, v7 20.10.2026), Kind, Running,
 QUIT, AUTO-START, Path.
 
 - QUIT quits the app; still alive after 5 s, the button offers FORCE QUIT.
