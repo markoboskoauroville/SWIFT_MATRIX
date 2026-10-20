@@ -53,3 +53,11 @@
    traffic lights stay as they are. — **Status:** built 19.10.2026, v5: ✕ (xmark, grey, 30×30) at the far right of
    the SWIFT MATRIX ON OFF row, performClose on the window. Checked by screenshot (window capture). Swift Matrix has no
    other dialog. Marko to try ✕ and OFF.
+
+## 20.10.2026: star menu only, Hammerspoon retired
+
+> Please fix the Swift Matrix. It's showing other apps. I wanted to just show the apps of a star menu, nothing else. understand, start menu only and I don't want hammer spoon to start automatically because we have everything already migrated to Swift so it needs to be retired
+
+1. The table shows only the apps of the star menu (rows of `~/.config/star-rows.json`): no login items, no launch
+   agents, no other open apps. — **Status:** in progress
+2. Hammerspoon never starts automatically; Swift Matrix no longer shows or drives Hammerspoon rows. — **Status:** in progress
