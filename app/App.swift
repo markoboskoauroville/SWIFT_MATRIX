@@ -19,19 +19,20 @@
 // Dock) brings the window back.
 // v5 (19.10.2026, Marko: "please unify the position of the close button on every application. It's far upper right
 // corner"): an ✕ at the far right of that row closes the window only; Swift Matrix stays ON.
+// v6 (20.10.2026, Marko: "It's showing other apps. I wanted to just show the apps of a star menu, nothing else ... I don't
+// want hammer spoon to start automatically ... it needs to be retired"): only the star's Swift apps (kind "app" in
+// star-rows.json). No login items, no LaunchAgents, no other open apps, and no Hammerspoon: its Lua rows are not shown
+// and Swift Matrix never asks `hs` anything. The three sections above are history.
 import SwiftUI
 import AppKit
 
-let VERSION = 5
+let VERSION = 6
 let REPO = "https://github.com/markoboskoauroville/SWIFT_MATRIX"
 let HOME = NSHomeDirectory()
 let CONF = HOME + "/.config"
 let ROWS_FILE = CONF + "/star-rows.json"
 let RUNNING_FILE = CONF + "/star-running.json"
 let AUTOSTART_FILE = CONF + "/star-autostart.json"
-let MEMORY_FILE = CONF + "/swift-matrix.json"
-let UID = getuid()
-let HS = "/opt/homebrew/bin/hs"
 let SELF_ID = "community.auroville.swiftmatrix"
 
 let INK = Color(red: 0x0B/255, green: 0x0D/255, blue: 0x10/255)
@@ -54,30 +55,6 @@ func writeJSON(_ o: Any, _ p: String) {
         try? d.write(to: URL(fileURLWithPath: p), options: .atomic)
     }
 }
-@discardableResult
-func run(_ exe: String, _ args: [String], timeout: Double = 15) -> (Int32, String) {
-    let p = Process(); p.executableURL = URL(fileURLWithPath: exe); p.arguments = args
-    let out = Pipe(); p.standardOutput = out; p.standardError = out
-    do { try p.run() } catch { return (-1, error.localizedDescription) }
-    let killer = DispatchWorkItem { if p.isRunning { p.terminate() } }
-    DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: killer)
-    let d = out.fileHandleForReading.readDataToEndOfFile()
-    p.waitUntilExit(); killer.cancel()
-    return (p.terminationStatus, String(data: d, encoding: .utf8) ?? "")
-}
-func appName(_ path: String) -> String {
-    // the name of the .app a path lies in, or the file's own name
-    if let r = path.range(of: ".app/", options: .backwards) ?? path.range(of: ".app", options: .backwards) {
-        return (String(path[..<r.lowerBound]) as NSString).lastPathComponent
-    }
-    return (path as NSString).lastPathComponent
-}
-func appBundlePath(_ raw: String) -> String? {
-    let path = NSString(string: raw).expandingTildeInPath
-    if path.hasSuffix(".app") { return path }
-    guard let r = path.range(of: ".app/") else { return nil }
-    return String(path[..<path.index(r.lowerBound, offsetBy: 4)])
-}
 func icon(_ path: String?) -> NSImage? {
     guard let p = path, FileManager.default.fileExists(atPath: p) else { return nil }
     let i = NSWorkspace.shared.icon(forFile: p); i.size = NSSize(width: 18, height: 18); return i
@@ -85,8 +62,7 @@ func icon(_ path: String?) -> NSImage? {
 
 // MARK: the model
 
-enum Source: String { case star = "STAR", starLua = "STAR · HAMMERSPOON", login = "LOGIN ITEM", helper = "THE APP'S OWN LOGIN HELPER",
-                       agent = "LAUNCH AGENT", systemAgent = "LAUNCH AGENT (FOR ALL USERS)", app = "OPEN NOW" }
+enum Source: String { case star = "STAR" }
 
 struct Entry: Identifiable {
     var id: String
@@ -95,32 +71,20 @@ struct Entry: Identifiable {
     var detail: String = ""
     var path: String?               // the .app, for the icon and for a login item
     var bundleID: String?
-    var label: String?              // a LaunchAgent's label
     var key: String?                // a star row's key
     var running = false
     var auto: Bool?                 // nil: not known yet
-    var canToggle = true
-    var why = ""                    // why the switch is grey
 }
 
 final class Matrix: ObservableObject {
     @Published var star: [Entry] = []
-    @Published var boot: [Entry] = []
-    @Published var open: [Entry] = []
     @Published var said = ""
-    @Published var btmReady = false
-    private var btm: [Entry] = []                  // login items, from System Events (in the background)
-    private var luaOn: [String: Bool] = [:]
     private var quitting: [String: Date] = [:]     // id -> when QUIT was pressed (for FORCE QUIT after 5 s)
     private var timer: Timer?
 
     init() {
         refresh()
-        scanBTM()
-        scanLua()
         timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in self?.refresh() }
-        Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in self?.scanBTM() }
-        Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in self?.scanLua() }
     }
 
     // --- the star's memory
@@ -140,159 +104,24 @@ final class Matrix: ObservableObject {
                    "note": "Swift Matrix (Mantra): ALWAYS starts at login whatever was open, NEVER does not start even if it was open. Read by Star (Mantra)."], AUTOSTART_FILE)
     }
 
-    // --- Hammerspoon's rows
-    func scanLua() {
-        DispatchQueue.global().async {
-            guard FileManager.default.isExecutableFile(atPath: HS),
-                  !NSRunningApplication.runningApplications(withBundleIdentifier: "org.hammerspoon.Hammerspoon").isEmpty else {
-                DispatchQueue.main.async { self.luaOn = [:] }; return
-            }
-            let tmp = NSTemporaryDirectory() + "swift-matrix-lua.json"
-            let (_, out) = run(HS, ["-t", "5", "-c", "local f=io.open('\(tmp)','w'); f:write(STAR.list()); f:close(); return 'ok'"], timeout: 8)
-            var s: [String: Bool] = [:]
-            if out.contains("ok"), let j = readJSON(tmp) as? [String: Any], let apps = j["apps"] as? [[String: Any]] {
-                for a in apps { if let k = a["key"] as? String { s[k] = (a["on"] as? Bool) ?? false } }
-            }
-            DispatchQueue.main.async { self.luaOn = s; self.refresh() }
-        }
-    }
-
-    // --- login items: System Events (macOS asks once for Automation, never a password).
-    // (14.10.2026) Not the background-items dump: run from an app it asked Marko for his admin password at every
-    // refresh. The apps' own login helpers (registered by other apps) cannot be read without it, so they are one row
-    // that opens System Settings -> Login Items.
-    func scanBTM() {
-        DispatchQueue.global().async {
-            let (st, out) = run("/usr/bin/osascript", ["-e",
-                "set o to \"\"\ntell application \"System Events\"\nrepeat with i in every login item\nset o to o & (name of i) & tab & (path of i) & linefeed\nend repeat\nend tell\nreturn o"], timeout: 60)
-            var list: [Entry] = []
-            if st == 0 {
-                for line in out.components(separatedBy: "\n") {
-                    let c = line.components(separatedBy: "\t"); if c.count < 2 || c[1].isEmpty { continue }
-                    let path = c[1].hasSuffix("/") ? String(c[1].dropLast()) : c[1]
-                    let bid = Bundle(url: URL(fileURLWithPath: path))?.bundleIdentifier ?? path
-                    list.append(Entry(id: "login:" + bid, name: c[0].replacingOccurrences(of: ".app", with: ""), source: .login,
-                                      detail: path, path: path, bundleID: bid, auto: true))
-                }
-            }
-            var h = Entry(id: "helper:settings", name: "The apps' own login helpers", source: .helper,
-                          detail: st == 0 ? "Path Finder, iBoysoft MagicMenu and others register these themselves: switched in System Settings, Login Items"
-                                          : "System Events did not answer (Automation for Swift Matrix not allowed yet?): " + out.trimmingCharacters(in: .whitespacesAndNewlines),
-                          path: "/System/Applications/System Settings.app", auto: true)
-            h.canToggle = false; h.why = "Opens System Settings, General, Login Items"
-            list.append(h)
-            DispatchQueue.main.async { self.btm = list; self.btmReady = true; self.refresh() }
-        }
-    }
-
-    // --- LaunchAgents
-    func agents() -> [Entry] {
-        let (_, dis) = run("/bin/launchctl", ["print-disabled", "gui/\(UID)"])
-        var disabled: [String: Bool] = [:]
-        for l in dis.components(separatedBy: "\n") {
-            let p = l.components(separatedBy: "\"")
-            if p.count >= 3 { disabled[p[1]] = l.contains("=> disabled") || l.contains("=> true") }
-        }
-        let (_, list) = run("/bin/launchctl", ["list"])
-        var pid: [String: Bool] = [:], loaded = Set<String>()
-        for l in list.components(separatedBy: "\n").dropFirst() {
-            let c = l.components(separatedBy: "\t"); if c.count < 3 { continue }
-            loaded.insert(c[2]); pid[c[2]] = c[0] != "-"
-        }
-        var out: [Entry] = []
-        for (dir, src) in [(HOME + "/Library/LaunchAgents", Source.agent), ("/Library/LaunchAgents", Source.systemAgent)] {
-            for f in ((try? FileManager.default.contentsOfDirectory(atPath: dir)) ?? []).sorted() where f.hasSuffix(".plist") {
-                let p = dir + "/" + f
-                guard let d = FileManager.default.contents(atPath: p),
-                      let pl = try? PropertyListSerialization.propertyList(from: d, format: nil) as? [String: Any],
-                      let label = pl["Label"] as? String else { continue }
-                let exe = (pl["Program"] as? String) ?? ((pl["ProgramArguments"] as? [String]) ?? []).first ?? ""
-                let args = (pl["ProgramArguments"] as? [String]) ?? []
-                // the thing it really runs: an .app among the arguments (open -a X.app), a script after python, or the program
-                let target = args.first(where: { $0.contains(".app") }) ?? (args.count > 1 && exe.contains("python") ? args.last! : exe)
-                let app = appBundlePath(target)
-                // started at login: RunAtLoad, or KeepAlive true (a KeepAlive *dictionary* waits for its condition)
-                let atLoad = ((pl["RunAtLoad"] as? Bool) ?? false) || ((pl["KeepAlive"] as? Bool) ?? false)
-                let isOff = disabled[label] ?? ((pl["Disabled"] as? Bool) ?? false)
-                var e = Entry(id: "agent:" + label, name: app.map { appName($0) } ?? appName(target), source: src,
-                              detail: label + "  ·  " + (target as NSString).abbreviatingWithTildeInPath, path: app, label: label)
-                e.running = pid[label] ?? false
-                e.auto = atLoad && !isOff
-                if !atLoad { e.canToggle = false; e.why = "Not started at login: it runs only when something asks for it" }
-                out.append(e)
-            }
-        }
-        return out
-    }
-
-    // --- one look at everything (every 2 s; the login items come from the last background scan)
+    // --- one look at the star's Swift apps (every 2 s)
     func refresh() {
-        let apps = NSWorkspace.shared.runningApplications.filter { a in
-            guard a.activationPolicy != .prohibited, let p = a.bundleURL?.path, a.bundleIdentifier != SELF_ID else { return false }
-            return !p.hasPrefix("/System/Library/") && !p.hasPrefix("/Library/Apple") && !p.hasPrefix("/usr/")   // TextEdit, Notes… (/System/Applications) are his apps too
-        }
-        let runningIDs = Set(apps.compactMap { $0.bundleIdentifier })
-        var claimed = Set<String>()
-
-        // the star
+        let runningIDs = Set(NSWorkspace.shared.runningApplications.compactMap { $0.bundleIdentifier })
         var s: [Entry] = []
         if let d = FileManager.default.contents(atPath: ROWS_FILE), let j = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
            let rows = j["rows"] as? [[String: Any]] {
-            for r in rows {
+            for r in rows where (r["kind"] as? String ?? "app") == "app" {
                 guard let key = r["key"] as? String, let name = r["name"] as? String else { continue }
-                let kind = r["kind"] as? String ?? "app"
                 let path = (r["app"] as? String).map { NSString(string: $0).expandingTildeInPath }
                 let bid = path.flatMap { Bundle(url: URL(fileURLWithPath: $0))?.bundleIdentifier }
                 var e = Entry(id: "star:" + key, name: name.replacingOccurrences(of: " \\(.*$", with: "", options: .regularExpression),
-                              source: kind == "lua" ? .starLua : .star, detail: r["about"] as? String ?? "", path: path, bundleID: bid, key: key)
-                e.running = kind == "lua" ? (luaOn[key] ?? false) : (bid == SELF_ID || (bid.map { runningIDs.contains($0) } ?? false))
-                if kind == "lua" { e.path = "/Applications/Hammerspoon.app" }
+                              source: .star, detail: path.map { ($0 as NSString).abbreviatingWithTildeInPath } ?? "", path: path, bundleID: bid, key: key)
+                e.running = bid == SELF_ID || (bid.map { runningIDs.contains($0) } ?? false)
                 e.auto = starWillStart(key)
-                if let b = bid { claimed.insert(b) }
                 s.append(e)
             }
         }
-        claimed.insert("community.auroville.star")      // the star itself: its LaunchAgent row below
-
-        // what starts with the Mac
-        var b: [Entry] = []
-        let mem = readJSON(MEMORY_FILE) as? [String: Any] ?? [:]
-        let removed = mem["removedLoginItems"] as? [[String: String]] ?? []
-        var seen = Set<String>()
-        for var e in btm {
-            if let bid = e.bundleID { e.running = runningIDs.contains(bid); claimed.insert(bid); seen.insert(bid) }
-            b.append(e)
-        }
-        // login items switched off here stay in the list, OFF, so they can come back
-        for r in removed {
-            guard let path = r["path"], let bid = r["bundleID"], !seen.contains(bid) else { continue }
-            var e = Entry(id: "login:" + bid, name: r["name"] ?? appName(path), source: .login, detail: path, path: path, bundleID: bid, auto: false)
-            e.running = runningIDs.contains(bid); claimed.insert(bid)
-            b.append(e)
-        }
-        for var e in agents() {
-            if let p = e.path, let bid = Bundle(url: URL(fileURLWithPath: p))?.bundleIdentifier {
-                e.bundleID = bid
-                if runningIDs.contains(bid) { e.running = true }
-                claimed.insert(bid)
-            }
-            if e.label == "com.mantra.star" || e.label == "com.mantra.starmenu" { e.detail = "the star's own  ·  " + e.detail }
-            b.append(e)
-        }
-
-        // everything else that is open
-        var o: [Entry] = []
-        for a in apps {
-            guard let bid = a.bundleIdentifier, !claimed.contains(bid) else { continue }
-            // a helper inside another app (Claude Helper, Chrome's alerts) belongs to that app's row
-            if let p = a.bundleURL?.path, p.dropLast(4).contains(".app/") { continue }
-            var e = Entry(id: "app:" + bid, name: a.localizedName ?? bid, source: .app, detail: a.bundleURL?.path ?? "", path: a.bundleURL?.path, bundleID: bid, running: true, auto: false)
-            if a.activationPolicy == .accessory { e.detail = "in the menu bar  ·  " + e.detail }
-            o.append(e)
-        }
-        o.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        // QUIT pressed and still alive after 5 s: the button becomes FORCE QUIT
-        star = s; boot = b; open = o
+        star = s
     }
 
     func stubborn(_ e: Entry) -> Bool { e.running && (quitting[e.id].map { Date().timeIntervalSince($0) > 5 } ?? false) }
@@ -302,16 +131,6 @@ final class Matrix: ObservableObject {
     func quit(_ e: Entry) {
         let force = stubborn(e)
         quitting[e.id] = Date()
-        if e.source == .starLua, let k = e.key {
-            DispatchQueue.global().async { run(HS, ["-t", "20", "-c", "STAR.command('\(k)','stop')"], timeout: 25); self.scanLua() }
-            said = "\(e.name): asked Hammerspoon to stop it"; return
-        }
-        if let l = e.label, e.source == .agent || e.source == .systemAgent {
-            // a LaunchAgent stops by being taken out of launchd until the next login (KeepAlive would bring it back)
-            let (st, out) = run("/bin/launchctl", ["bootout", "gui/\(UID)/\(l)"])
-            said = st == 0 ? "\(e.name): stopped until the next login" : "\(e.name): launchctl said \(out.trimmingCharacters(in: .whitespacesAndNewlines))"
-            refresh(); return
-        }
         guard let bid = e.bundleID else { return }
         for a in NSRunningApplication.runningApplications(withBundleIdentifier: bid) { if force { a.forceTerminate() } else { a.terminate() } }
         said = force ? "\(e.name): forced to quit" : "\(e.name): asked to quit"
@@ -320,49 +139,10 @@ final class Matrix: ObservableObject {
     }
 
     func toggleAuto(_ e: Entry) {
+        guard let k = e.key else { return }
         let on = !(e.auto ?? false)
-        switch e.source {
-        case .star, .starLua:
-            guard let k = e.key else { return }
-            setStar(k, on); said = "\(e.name): " + (on ? "starts with the Mac" : "does not start with the Mac")
-            refresh()
-        case .agent, .systemAgent:
-            guard let l = e.label else { return }
-            let (st, out) = run("/bin/launchctl", [on ? "enable" : "disable", "gui/\(UID)/\(l)"])
-            said = st == 0 ? "\(e.name): " + (on ? "starts with the Mac" : "does not start with the Mac (still running until quit)")
-                           : "\(e.name): launchctl said \(out)"
-            refresh()
-        case .login, .app:
-            guard let path = e.path, let bid = e.bundleID else { return }
-            setLoginItem(name: e.name, path: path, bundleID: bid, on: on)
-        case .helper:
-            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension")!)
-            said = "\(e.name): its own helper is switched in System Settings → Login Items"
-        }
-    }
-
-    func setLoginItem(name: String, path: String, bundleID: String, on: Bool) {
-        let p = path.replacingOccurrences(of: "\"", with: "\\\"")
-        let script = on
-            ? "tell application \"System Events\" to make login item at end with properties {path:\"\(p)\", hidden:true}"
-            : "tell application \"System Events\" to delete (every login item whose path is \"\(p)\")"
-        said = "\(name): asking System Events…"
-        DispatchQueue.global().async {
-            let (st, out) = run("/usr/bin/osascript", ["-e", script], timeout: 60)
-            DispatchQueue.main.async {
-                if st == 0 {
-                    var mem = readJSON(MEMORY_FILE) as? [String: Any] ?? [:]
-                    var removed = (mem["removedLoginItems"] as? [[String: String]] ?? []).filter { $0["bundleID"] != bundleID }
-                    if !on { removed.append(["name": name, "path": path, "bundleID": bundleID]) }
-                    mem["removedLoginItems"] = removed
-                    writeJSON(mem, MEMORY_FILE)
-                    self.said = "\(name): " + (on ? "a login item now (opens hidden)" : "no longer a login item")
-                } else {
-                    self.said = "\(name): System Events said \(out.trimmingCharacters(in: .whitespacesAndNewlines))"
-                }
-                self.scanBTM()
-            }
-        }
+        setStar(k, on); said = "\(e.name): " + (on ? "starts with the Mac" : "does not start with the Mac")
+        refresh()
     }
 }
 
@@ -436,7 +216,7 @@ struct MatrixView: View {
 
     var rows: [Entry] {
         let q = filter.trimmingCharacters(in: .whitespaces).lowercased()
-        let all = (m.star + m.boot + m.open).filter { e in
+        let all = m.star.filter { e in
             q.isEmpty || e.name.lowercased().contains(q) || e.kindText.lowercased().contains(q) || e.detail.lowercased().contains(q)
                 || (e.path ?? "").lowercased().contains(q)
         }
@@ -484,7 +264,7 @@ struct MatrixView: View {
                 }.width(min: 180, ideal: 240)
                 TableColumn("Kind", value: \Entry.kindText) { e in
                     Text(e.kindText).font(.system(size: 9, weight: .bold, design: .monospaced))
-                        .foregroundColor(e.source == .star || e.source == .starLua ? AMBER : GREY)
+                        .foregroundColor(AMBER)
                 }.width(min: 90, ideal: 170)
                 TableColumn("Running", value: \Entry.runningText) { e in
                     Text(e.running ? "RUNNING" : "off").font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundColor(e.running ? GREEN : GREY)
@@ -494,8 +274,8 @@ struct MatrixView: View {
                 }.width(104)
                 TableColumn("Auto-start", value: \Entry.autoText) { e in
                     Word(text: e.auto == nil ? "AUTO-START …" : (e.auto! ? "AUTO-START ON" : "AUTO-START OFF"),
-                         colour: (e.auto ?? false) ? GREEN : GREY, enabled: e.auto != nil && (e.canToggle || e.source == .helper)) { m.toggleAuto(e) }
-                        .help(e.why.isEmpty ? "Whether it starts with the Mac at the next login" : e.why)
+                         colour: (e.auto ?? false) ? GREEN : GREY, enabled: e.auto != nil) { m.toggleAuto(e) }
+                        .help("Whether it starts with the Mac at the next login")
                 }.width(120)
                 TableColumn("Path", value: \Entry.pathText) { e in
                     Text(e.detail).font(.system(size: 10)).foregroundColor(GREY).lineLimit(1).truncationMode(.middle).help(e.detail)
@@ -510,7 +290,7 @@ struct MatrixView: View {
                 if let f = new.first { sortKey = keyOf(f); sortAscending = f.order == .forward }
             }
             HStack {
-                Text("QUIT closes it now · AUTO-START decides the next login · the star's apps: what was open comes back, ON always, OFF never")
+                Text("The star's apps only · QUIT closes it now · AUTO-START: what was open comes back, ON always, OFF never")
                     .font(.system(size: 10)).foregroundColor(GREY)
                 Spacer()
                 Text("v\(VERSION)").font(.system(size: 11, design: .monospaced)).foregroundColor(GREY)

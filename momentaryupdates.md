@@ -59,5 +59,8 @@
 > Please fix the Swift Matrix. It's showing other apps. I wanted to just show the apps of a star menu, nothing else. understand, start menu only and I don't want hammer spoon to start automatically because we have everything already migrated to Swift so it needs to be retired
 
 1. The table shows only the apps of the star menu (rows of `~/.config/star-rows.json`): no login items, no launch
-   agents, no other open apps. — **Status:** in progress
-2. Hammerspoon never starts automatically; Swift Matrix no longer shows or drives Hammerspoon rows. — **Status:** in progress
+   agents, no other open apps. — **Status:** done 20.10.2026, v6: 27 rows, every one STAR (screenshot).
+2. Hammerspoon never starts automatically; Swift Matrix no longer shows or drives Hammerspoon rows. — **Status:** v6 never calls
+   `hs`; Hammerspoon is not a login item (System Events) and not running after the 20.10 boot. The star still holds 7 Lua
+   rows (Buckets, Sister app, Macro Recorder, Voices, Ableton Assistant A1, MIDI to MK Control, MIDI to Key Stroke):
+   asked Marko whether they leave the star.

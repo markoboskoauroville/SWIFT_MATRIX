@@ -14,28 +14,21 @@ quits it. Closing the window leaves it ON; a click on its row in the star (or th
 The ✕ at the far right of that row (v5, 19.10.2026: *"unify the position of the close button on every application.
 It's far upper right corner"*) closes the window only.
 
-## The table
+## The table: the star's apps only (v6, 20.10.2026)
 
-A filter field above the table (v3) narrows the rows as he types: name, kind or path, any case; the (x) clears it.
+Marko, 20.10.2026: *"It's showing other apps. I wanted to just show the apps of a star menu, nothing else ... I don't want
+hammer spoon to start automatically ... it needs to be retired."*
 
-One table; every column header sorts, a second click reverses, the choice is remembered (Marko, 14.10.2026: *"Build
-columns for sorting like in any program"*). Columns: Name (green dot = running), Kind, Running, QUIT, AUTO-START, Path.
+One row per Swift app of the star (kind "app" in `~/.config/star-rows.json`), nothing else: no login items, no
+LaunchAgents, no other open apps, no Hammerspoon rows. Swift Matrix never calls `hs`.
 
-| Kind | Where it comes from | AUTO-START switches | QUIT does |
-|---|---|---|---|
-| STAR | a row of `~/.config/star-rows.json` | `~/.config/star-autostart.json` (ALWAYS / NEVER), read by Star (Mantra) at login | quits the app |
-| STAR · HAMMERSPOON | a Lua row still in Hammerspoon | the same file; the star applies it 20 s after login | `STAR.command(key,'stop')` |
-| LOGIN ITEM | System Events login items | System Events: removed, or added back hidden (remembered in `~/.config/swift-matrix.json`) | quits the app |
-| THE APP'S OWN LOGIN HELPER | apps that register their own (Path Finder, iBoysoft) | opens System Settings → Login Items | n/a |
-| LAUNCH AGENT / (FOR ALL USERS) | `~/Library/LaunchAgents`, `/Library/LaunchAgents` | `launchctl disable|enable gui/<uid>/<label>` (per user, no password) | `launchctl bootout` until the next login |
-| OPEN NOW | every other open app (helpers inside other apps left out) | ON makes it a login item that opens hidden | quits it; after 5 s the button offers FORCE QUIT |
+A filter field above the table narrows the rows as he types: name or path, any case; the (x) clears it. Every column
+header sorts, a second click reverses, the choice is remembered. Columns: Name (green dot = running), Kind, Running,
+QUIT, AUTO-START, Path.
 
-For a star app, auto-start = what was open when the Mac stopped (`star-running.json`) + ALWAYS − NEVER.
-
-## No password, ever
-
-Login items come from System Events (macOS asks once to allow Automation). **Never `sfltool dumpbtm`**: run from an app
-it asks for the admin password at every call (Marko, 14.10.2026: *"why I need to put my password to Swift tool many times"*).
+- QUIT quits the app; still alive after 5 s, the button offers FORCE QUIT.
+- AUTO-START writes `~/.config/star-autostart.json` (ALWAYS / NEVER), read by Star (Mantra) at login. Auto-start =
+  what was open when the Mac stopped (`star-running.json`) + ALWAYS − NEVER.
 
 ## Build
 
