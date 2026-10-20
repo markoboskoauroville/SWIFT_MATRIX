@@ -64,3 +64,10 @@
    `hs`; Hammerspoon is not a login item (System Events) and not running after the 20.10 boot. The star still holds 7 Lua
    rows (Buckets, Sister app, Macro Recorder, Voices, Ableton Assistant A1, MIDI to MK Control, MIDI to Key Stroke):
    asked Marko whether they leave the star.
+
+## 20.10.2026: the running light is a launch button
+
+> make Swift Matrix also a launcher for the apps so this running light at the beginning is a launching icon
+
+3. The dot at the start of each row is a button: an app that is off is opened (its window in front, as the star
+   opens it); an app that runs is brought to the front with its window. Green = running, as before. — **Status:** in progress
