@@ -26,7 +26,7 @@
 import SwiftUI
 import AppKit
 
-let VERSION = 7
+let VERSION = 8
 let REPO = "https://github.com/markoboskoauroville/SWIFT_MATRIX"
 let HOME = NSHomeDirectory()
 let CONF = HOME + "/.config"
@@ -194,7 +194,8 @@ struct OnOff: View {
     var body: some View {
         HStack(spacing: 4) {
             Button(action: {}) { word("ON", on) }.buttonStyle(.plain).help("Swift Matrix runs")
-            Button(action: off) { word("OFF", !on) }.buttonStyle(.plain).help("Quit Swift Matrix")
+            Button(action: { DispatchQueue.main.async { off() } }) { word("OFF", !on) }.buttonStyle(.plain).help("Quit Swift Matrix")
+                .accessibilityLabel("Off").accessibilityIdentifier("off")
         }.padding(.leading, 8)
     }
     func word(_ t: String, _ lit: Bool) -> some View {
@@ -212,6 +213,26 @@ struct CloseX: View {
             Image(systemName: "xmark").font(.system(size: 15, weight: .medium)).foregroundColor(GREY)
                 .frame(width: 30, height: 30).contentShape(Rectangle())
         }.buttonStyle(.plain).help("Close the window (Swift Matrix stays ON)")
+        .accessibilityLabel("Close window").accessibilityIdentifier("close")
+    }
+}
+
+// v8 (31.10.2026, Marko: "On, off and top. Please build it in every application"): TOP beside ✕. Green = the window
+// stays above every other window (NSWindow.level .floating), grey = as usual; remembered in "onTop", applied at launch.
+struct TopWord: View {
+    @AppStorage("onTop") private var onTop = false
+    var body: some View {
+        Button(action: { onTop.toggle(); TopWord.float(onTop) }) {
+            Text("TOP").font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundColor(onTop ? GREEN : GREY)
+                .frame(minWidth: 44).padding(.vertical, 3)
+                .background(RoundedRectangle(cornerRadius: 5).fill(onTop ? SLATE : SLATE.opacity(0.35)))
+                .contentShape(Rectangle())
+        }.buttonStyle(.plain).help("Always on top: green, the window stays above every other window")
+        .accessibilityLabel("Top").accessibilityIdentifier("top").accessibilityValue(onTop ? "on" : "off")
+        .onAppear { DispatchQueue.main.async { TopWord.float(onTop) } }
+    }
+    static func float(_ on: Bool) {
+        for w in NSApp.windows where w.title.hasPrefix("Swift Matrix") { w.level = on ? .floating : .normal }
     }
 }
 
@@ -255,6 +276,7 @@ struct MatrixView: View {
                     .font(.system(size: 11, design: .monospaced)).foregroundColor(GREY)
                 Spacer()
                 Text(m.said).font(.system(size: 11, design: .monospaced)).foregroundColor(AMBER).lineLimit(1)
+                TopWord()
                 CloseX()
             }.padding(14).padding(.trailing, -6).background(SURFACE)
             HStack(spacing: 8) {

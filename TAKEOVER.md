@@ -13,3 +13,5 @@ its row. No sfltool in the binary (no password dialogs).
 1. Marko uses it after a restart: which windows still open by themselves? Switch them OFF here.
 2. The first switch of a login item asks once for Automation (Swift Matrix → System Events): he allows it.
 3. Possible: a row's OPEN (start now), a filter box.
+
+- v8 (31.10.2026): the first row is SWIFT MATRIX ON OFF … TOP ✕; TOP keeps the window above the others (UserDefaults `onTop`); OFF, TOP and ✕ answer Accessibility as `off`, `top`, `close`.

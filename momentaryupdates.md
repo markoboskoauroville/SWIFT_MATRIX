@@ -77,4 +77,4 @@
 
 > "Please go to all the interface of my applications. Each needs to have the same user interface elements. On, off and top. Please build it in every application." (Marko, 31.10.2026; MANTRA_MANIFEST modules/swift-apps.md, "The first row of every app: ON OFF … TOP ✕")
 
-**Status:** pending.
+**Status:** done 31.10.2026, v8: the first row is SWIFT MATRIX ON OFF … TOP ✕, TOP in the same boxed words as ON / OFF. TOP is green while the window floats above every other window (NSWindow.level .floating), grey otherwise; remembered in UserDefaults "onTop" and applied when the window appears. OFF, TOP and ✕ carry the Accessibility identifiers `off`, `top`, `close`. Checked: the running v7 (pid 14386) quit through its own Quit, v8 opened in the background (pid 85179); the identifiers read through Accessibility; TOP pressed through Accessibility twice: window layer 0 → 3 (floating) → 0, onTop back to off; the window captured by its id at its minimum width (1000 pt): nothing cut, nothing overlapping; size put back to 1180 × 780. Marko to try TOP.
