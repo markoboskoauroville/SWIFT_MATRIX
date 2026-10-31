@@ -72,3 +72,9 @@
 3. The dot at the start of each row is a button: an app that is off is opened (its window in front, as the star
    opens it); an app that runs is brought to the front with its window. Green = running, as before. — **Status:** built 20.10.2026, v7 (a ▶ inside the light, 18 pt);
    restarted hidden (old pid 2442, new 7399). Not screenshotted: no window opened on his screen. Marko to click one.
+
+## 31.10.2026: ON, OFF and TOP in every application
+
+> "Please go to all the interface of my applications. Each needs to have the same user interface elements. On, off and top. Please build it in every application." (Marko, 31.10.2026; MANTRA_MANIFEST modules/swift-apps.md, "The first row of every app: ON OFF … TOP ✕")
+
+**Status:** pending.
