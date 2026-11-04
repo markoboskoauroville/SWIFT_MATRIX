@@ -1,30 +1,28 @@
-// The icon, drawn: the matrix itself, rows of apps, each with a dot (running) and a switch (auto-start), the version under it.
+// make_icon.swift: the icon is six letters over one picture (Marko 4.11.2026: "I want 6 letters in this icon and one
+// symbolic background, and that's all"). It is made once, for every star app, by STAR_SWIFT/icons6/six_icon.swift and
+// kept beside this file as six_1024.png; this script only hands it to the build, in the form the build asks for:
+//   swift make_icon.swift [version]                -> icon_1024.png (and icon.png when one is there) in this folder
+//   swift make_icon.swift <version> <file.png>      -> that png
+//   swift make_icon.swift <dir.iconset> [version]   -> the ten sizes of an iconset
+// No version is drawn any more: the six letters are the whole icon.
 import AppKit
-let S: CGFloat = 1024
-let version = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "1"
-let img = NSImage(size: NSSize(width: S, height: S)); img.lockFocus()
-let ctx = NSGraphicsContext.current!.cgContext
-ctx.addPath(CGPath(roundedRect: CGRect(x: 100, y: 100, width: 824, height: 824), cornerWidth: 180, cornerHeight: 180, transform: nil))
-ctx.setFillColor(NSColor(calibratedRed: 0.043, green: 0.051, blue: 0.063, alpha: 1).cgColor); ctx.fillPath()
-let green = NSColor(calibratedRed: 0.20, green: 0.82, blue: 0.48, alpha: 1).cgColor
-let amber = NSColor(calibratedRed: 0.96, green: 0.62, blue: 0.04, alpha: 1).cgColor
-let slate = NSColor(calibratedRed: 0.14, green: 0.19, blue: 0.24, alpha: 1).cgColor
-let sand = NSColor(calibratedRed: 0.95, green: 0.87, blue: 0.71, alpha: 1).cgColor
-let on: [(Bool, Bool)] = [(true, true), (true, false), (false, true), (true, true), (false, false)]
-for (i, (run, auto)) in on.enumerated() {
-    let y = 760 - CGFloat(i) * 100
-    // the running dot
-    ctx.setFillColor(run ? green : slate); ctx.fillEllipse(in: CGRect(x: 200, y: y, width: 56, height: 56))
-    // the name, a bar of sand
-    ctx.addPath(CGPath(roundedRect: CGRect(x: 290, y: y + 16, width: i == 0 ? 300 : 230 + CGFloat(i * 23 % 90), height: 24), cornerWidth: 12, cornerHeight: 12, transform: nil))
-    ctx.setFillColor(sand.copy(alpha: run ? 0.9 : 0.4)!); ctx.fillPath()
-    // the auto-start switch
-    let sw = CGRect(x: 690, y: y + 2, width: 120, height: 52)
-    ctx.addPath(CGPath(roundedRect: sw, cornerWidth: 26, cornerHeight: 26, transform: nil))
-    ctx.setFillColor(auto ? amber : slate); ctx.fillPath()
-    ctx.setFillColor(NSColor.white.cgColor)
-    ctx.fillEllipse(in: CGRect(x: auto ? sw.maxX - 48 : sw.minX + 4, y: sw.minY + 4, width: 44, height: 44))
+let me = URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent()
+let src = me.appendingPathComponent("six_1024.png").path
+let fm = FileManager.default
+func put(_ to: String) { try? fm.removeItem(atPath: to); try! fm.copyItem(atPath: src, toPath: to) }
+func sized(_ px: Int, _ to: String) {
+    let p = Process(); p.launchPath = "/usr/bin/sips"; p.arguments = ["-z", "\(px)", "\(px)", src, "--out", to]
+    p.standardOutput = FileHandle.nullDevice; p.launch(); p.waitUntilExit()
 }
-("v" + version as NSString).draw(at: NSPoint(x: 170, y: 150), withAttributes: [.font: NSFont.systemFont(ofSize: 92, weight: .semibold), .foregroundColor: NSColor(calibratedWhite: 0.78, alpha: 1)])
-img.unlockFocus()
-try! NSBitmapImageRep(data: img.tiffRepresentation!)!.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: "icon_1024.png"))
+let args = Array(CommandLine.arguments.dropFirst())
+if let set = args.first(where: { $0.hasSuffix(".iconset") }) {
+    try? fm.createDirectory(atPath: set, withIntermediateDirectories: true)
+    for (n, p) in [("16x16", 16), ("16x16@2x", 32), ("32x32", 32), ("32x32@2x", 64), ("128x128", 128), ("128x128@2x", 256),
+                   ("256x256", 256), ("256x256@2x", 512), ("512x512", 512), ("512x512@2x", 1024)] { sized(p, "\(set)/icon_\(n).png") }
+} else if let png = args.first(where: { $0.hasSuffix(".png") }) {
+    put(png)
+} else {
+    let cwd = fm.currentDirectoryPath
+    if src != "\(cwd)/icon_1024.png" { put("\(cwd)/icon_1024.png") }
+    if fm.fileExists(atPath: "\(cwd)/icon.png") { put("\(cwd)/icon.png") }
+}
