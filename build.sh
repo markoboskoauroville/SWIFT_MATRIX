@@ -33,6 +33,7 @@ cat > "$APP/Contents/Info.plist" <<PL
 <key>NSAppleEventsUsageDescription</key><string>Swift Matrix adds and removes your login items through System Events when you switch an app's auto-start.</string>
 </dict></plist>
 PL
-codesign --force -s "Mantra Apps" "$APP"
+codesign --force -s "${SIGN:-Mantra Apps}" "$APP"
+if [ -n "$NO_INSTALL" ]; then echo "built $APP (v$V)"; exit 0; fi
 rm -rf "/Applications/$NAME.app"; cp -R "$APP" /Applications/
 echo "built $APP (v$V) and installed it in /Applications"

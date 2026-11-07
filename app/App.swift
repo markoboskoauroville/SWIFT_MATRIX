@@ -26,7 +26,7 @@
 import SwiftUI
 import AppKit
 
-let VERSION = 8
+let VERSION = 9
 let REPO = "https://github.com/markoboskoauroville/SWIFT_MATRIX"
 let HOME = NSHomeDirectory()
 let CONF = HOME + "/.config"
@@ -112,10 +112,19 @@ final class Matrix: ObservableObject {
            let rows = j["rows"] as? [[String: Any]] {
             for r in rows where (r["kind"] as? String ?? "app") == "app" {
                 guard let key = r["key"] as? String, let name = r["name"] as? String else { continue }
-                let path = (r["app"] as? String).map { NSString(string: $0).expandingTildeInPath }
-                let bid = path.flatMap { Bundle(url: URL(fileURLWithPath: $0))?.bundleIdentifier }
-                var e = Entry(id: "star:" + key, name: name.replacingOccurrences(of: " \\(.*$", with: "", options: .regularExpression),
-                              source: .star, detail: path.map { ($0 as NSString).abbreviatingWithTildeInPath } ?? "", path: path, bundleID: bid, key: key)
+                // v9 (Marko, 7.11.2026: "it recognized the old application which doesn't exist ... does not know about
+                // the new name"): a renamed app keeps its bundle id, so a row whose path is gone is found by the id it
+                // carries ("bundle"), and the name shown is the installed app's own, never the row's old words.
+                var path = (r["app"] as? String).map { NSString(string: $0).expandingTildeInPath }
+                if let p = path, !FileManager.default.fileExists(atPath: p) {
+                    path = (r["bundle"] as? String).flatMap { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0)?.path }
+                }
+                let bundle = path.flatMap { Bundle(url: URL(fileURLWithPath: $0)) }
+                let bid = bundle?.bundleIdentifier ?? (r["bundle"] as? String)
+                let own = (bundle?.object(forInfoDictionaryKey: "CFBundleDisplayName") ?? bundle?.object(forInfoDictionaryKey: "CFBundleName")) as? String
+                let shown = own ?? name.replacingOccurrences(of: " \\(.*$", with: "", options: .regularExpression)
+                var e = Entry(id: "star:" + key, name: shown,
+                              source: .star, detail: path.map { ($0 as NSString).abbreviatingWithTildeInPath } ?? "NOT INSTALLED (" + ((r["app"] as? String) ?? "no path") + ")", path: path, bundleID: bid, key: key)
                 e.running = bid == SELF_ID || (bid.map { runningIDs.contains($0) } ?? false)
                 e.auto = starWillStart(key)
                 s.append(e)
